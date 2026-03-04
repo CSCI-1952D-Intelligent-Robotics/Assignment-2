@@ -45,6 +45,9 @@ jobs:
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
+          # Force non-PowerShell colcon shell handling on Linux runners.
+          export COLCON_EXTENSION_BLOCKLIST=colcon_powershell.shell.powershell
+          echo "COLCON_EXTENSION_BLOCKLIST=$COLCON_EXTENSION_BLOCKLIST"
           # Direct guard: keep ROS underlay on PYTHONPATH during this build step.
           export PYTHONPATH=/opt/ros/jazzy/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}
           echo "PYTHONPATH before build: $PYTHONPATH"
@@ -256,6 +259,8 @@ jobs:
           path: |
             log/**/*
             build/**/colcon_command_prefix_*.sh
+            build/**/colcon_command_prefix_*.ps1
+            build/**/colcon_command_prefix_*.ps1.env
             build/*/CMakeCache.txt
             build/*/ament_cmake_package_templates/*
             install/a2_common/share/a2_common/**/*
