@@ -45,7 +45,6 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           colcon build --symlink-install \
             --executor sequential \
-            --log-base log/build_deps \
             --event-handlers console_direct+ \
             --packages-select mujoco_ros2_bridge a2_common
 
@@ -108,7 +107,6 @@ jobs:
             || echo "WARNING: ament_package not importable before q-build"
           colcon build --symlink-install \
             --executor sequential \
-            --log-base log/build_questions \
             --event-handlers console_direct+ \
             --packages-select q1 q2 q3
 
