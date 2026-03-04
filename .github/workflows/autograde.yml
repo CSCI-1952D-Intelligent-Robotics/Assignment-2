@@ -27,12 +27,14 @@ jobs:
       - name: Baseline Python/ROS diagnostics
         shell: bash
         run: |
+          set +e
           source /opt/ros/jazzy/setup.bash
           echo "PATH=$PATH"
           echo "which python3: $(which python3)"
           python3 --version
           python3 -m pip --version
           python3 -c "import importlib.util, os, sys; spec = importlib.util.find_spec('ament_package'); print('sys.executable:', sys.executable); print('PYTHONPATH:', os.environ.get('PYTHONPATH', '')); print('ament_package:', spec.origin if spec else 'MISSING')"
+          exit 0
 
       - name: Install Python dependencies
         run: python3 -m pip install --user mujoco==3.4.0
@@ -43,8 +45,8 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           colcon build --symlink-install \
             --executor sequential \
-            --event-handlers console_direct+ \
             --log-base log/build_deps \
+            --event-handlers console_direct+ \
             --packages-select mujoco_ros2_bridge a2_common
 
       - name: Diagnose Python/ROS environment after a2_common build
@@ -106,8 +108,8 @@ jobs:
             || echo "WARNING: ament_package not importable before q-build"
           colcon build --symlink-install \
             --executor sequential \
-            --event-handlers console_direct+ \
             --log-base log/build_questions \
+            --event-handlers console_direct+ \
             --packages-select q1 q2 q3
 
       # ── Q1 ────────────────────────────────────────────────────────
