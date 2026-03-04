@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     if: github.actor != 'github-classroom[bot]'
-    env:
-      PIP_BREAK_SYSTEM_PACKAGES: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +24,91 @@ jobs:
         with:
           required-ros-distributions: jazzy
 
-      - name: Install Python dependencies
-        run: pip install mujoco==3.4.0
+      - name: Baseline Python/ROS diagnostics
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          echo "PATH=$PATH"
+          echo "which python3: $(which python3)"
+          python3 --version
+          python3 -m pip --version
+          python3 -c "import importlib.util, os, sys; spec = importlib.util.find_spec('ament_package'); print('sys.executable:', sys.executable); print('PYTHONPATH:', os.environ.get('PYTHONPATH', '')); print('ament_package:', spec.origin if spec else 'MISSING')"
 
-      - name: Build workspace
+      - name: Install Python dependencies
+        run: python3 -m pip install --user mujoco==3.4.0
+
+      - name: Build dependencies (mujoco_ros2_bridge, a2_common)
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
           colcon build --symlink-install \
-            --packages-select mujoco_ros2_bridge a2_common q1 q2 q3
+            --executor sequential \
+            --event-handlers console_direct+ \
+            --log-base log/build_deps \
+            --packages-select mujoco_ros2_bridge a2_common
+
+      - name: Diagnose Python/ROS environment after a2_common build
+        shell: bash
+        run: |
+          set +e
+
+          probe() {
+            local label="$1"
+            echo ""
+            echo "== $label =="
+            python3 -c "import importlib.util, os, sys; spec = importlib.util.find_spec('ament_package'); print('sys.executable:', sys.executable); print('sys.version:', sys.version.replace('\\n', ' ')); print('PYTHONPATH:', os.environ.get('PYTHONPATH', '')); print('sys.path:'); [print('  ', p) for p in sys.path]; print('ament_package:', spec.origin if spec else 'MISSING')"
+            local rc=$?
+            echo "probe_rc=$rc"
+            return $rc
+          }
+
+          source /opt/ros/jazzy/setup.bash
+          echo "which python3: $(which python3)"
+          python3 --version
+          probe "After /opt/ros/jazzy/setup.bash" || true
+
+          if [ -f install/a2_common/local_setup.bash ]; then
+            source install/a2_common/local_setup.bash
+            echo "which python3 after a2_common hook: $(which python3)"
+            probe "After install/a2_common/local_setup.bash" || true
+          else
+            echo "Missing install/a2_common/local_setup.bash"
+          fi
+
+          echo ""
+          echo "== Selected environment vars =="
+          env | sort | grep -E '^(AMENT|COLCON|PYTHON|ROS)_' || true
+
+          echo ""
+          echo "== a2_common hook files =="
+          find install/a2_common -maxdepth 5 -type f \( -name '*.dsv' -o -name '*.sh' \) | sort
+          for f in \
+            install/a2_common/share/a2_common/package.dsv \
+            install/a2_common/share/a2_common/local_setup.sh \
+            install/a2_common/share/a2_common/local_setup.bash \
+            install/a2_common/share/a2_common/hook/pythonpath.dsv
+          do
+            if [ -f "$f" ]; then
+              echo ""
+              echo "----- $f -----"
+              sed -n '1,200p' "$f"
+            fi
+          done
+
+          # Keep this step informational so question-package build still runs.
+          exit 0
+
+      - name: Build question packages (q1, q2, q3)
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          python3 -c "import ament_package; print('ament_package import before q-build OK')" \
+            || echo "WARNING: ament_package not importable before q-build"
+          colcon build --symlink-install \
+            --executor sequential \
+            --event-handlers console_direct+ \
+            --log-base log/build_questions \
+            --packages-select q1 q2 q3
 
       # ── Q1 ────────────────────────────────────────────────────────
       - name: "Q1 — Occupancy Grid Mapping"
@@ -128,6 +202,18 @@ jobs:
           exit $?
 
       # ── Summary ───────────────────────────────────────────────────
+      - name: Upload colcon logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: colcon-logs
+          path: |
+            log
+            build/*/CMakeCache.txt
+            build/*/ament_cmake_package_templates/*
+            install/a2_common/share/a2_common
+          if-no-files-found: warn
+
       - name: Results summary
         if: always()
         run: |
