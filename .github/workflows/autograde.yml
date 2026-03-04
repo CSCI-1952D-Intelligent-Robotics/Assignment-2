@@ -39,16 +39,18 @@ jobs:
       - name: Install Python dependencies
         run: python3 -m pip install --user mujoco==3.4.0
 
-      - name: Build dependencies (mujoco_ros2_bridge, a2_common)
+      - name: Build all packages (mujoco_ros2_bridge, a2_common, q1, q2, q3)
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
+          python3 -c "import ament_package; print('ament_package OK')"
+          python3 -c "import mujoco; print('mujoco OK')" || echo "WARNING: mujoco not importable before build"
           colcon build --symlink-install \
             --executor sequential \
             --event-handlers console_direct+ \
-            --packages-select mujoco_ros2_bridge a2_common
+            --packages-select mujoco_ros2_bridge a2_common q1 q2 q3
 
-      - name: Diagnose Python/ROS environment after a2_common build
+      - name: Diagnose Python/ROS environment post-build
         shell: bash
         run: |
           set +e
@@ -96,19 +98,8 @@ jobs:
             fi
           done
 
-          # Keep this step informational so question-package build still runs.
+          # Informational only — does not affect subsequent steps.
           exit 0
-
-      - name: Build question packages (q1, q2, q3)
-        shell: bash
-        run: |
-          source /opt/ros/jazzy/setup.bash
-          python3 -c "import ament_package; print('ament_package import before q-build OK')" \
-            || echo "WARNING: ament_package not importable before q-build"
-          colcon build --symlink-install \
-            --executor sequential \
-            --event-handlers console_direct+ \
-            --packages-select q1 q2 q3
 
       # ── Q1 ────────────────────────────────────────────────────────
       - name: "Q1 — Occupancy Grid Mapping"

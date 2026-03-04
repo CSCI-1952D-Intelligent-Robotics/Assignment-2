@@ -18,8 +18,8 @@
     <depend>geometry_msgs</depend>
     <depend>nav_msgs</depend>
     <depend>visualization_msgs</depend>
-    <exec_depend>a2_common</exec_depend>
-    <exec_depend>mujoco_ros2_bridge</exec_depend>
+    <depend>a2_common</depend>
+    <depend>mujoco_ros2_bridge</depend>
 
     <export>
         <build_type>ament_cmake</build_type>
