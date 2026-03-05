@@ -22,6 +22,12 @@ source install/setup.zsh    # use setup.bash if on bash
 
 Example commands below will assume that your Conda environment is active and your workspace is sourced.
 
+
+> **⚠️ Warning:** Before launching, make sure no stale ROS 2 / MuJoCo processes are running from previous sessions. Leftover nodes (e.g., `mujoco_sim_node`, `rviz_marker_node`) will publish conflicting data on the same topics, causing visual flickering in RViz. Check for lingering processes with:
+> ```bash
+> ps aux | grep -E 'mujoco|rviz|ros2' | grep -v grep
+> ```
+
 ## Question 1: Occupancy Grid Mapping
 
 **Goal**: Construct a probabilistic occupancy grid for a mobile robot with a front-facing laser scanner.
