@@ -3,7 +3,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from a2_common import GridInfo, PosedLaserScan
+from a2_common import GridInfo, PosedLaserScan, bresenham_line
 
 
 class OccupancyGrid:

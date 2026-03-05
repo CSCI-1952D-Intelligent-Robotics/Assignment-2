@@ -13,6 +13,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 
 from a2_common import FAST_QoS, GridInfo, build_gt_map
+from a2_common.motion_models import simulate_velocity_delta
 
 
 class BayesLocalizer(Node):
@@ -114,10 +115,11 @@ class BayesLocalizer(Node):
         self._pose_pub.publish(pose_msg)
 
         self._correction_step_count += 1
-        self.get_logger().info(
-            f"correction={self._correction_step_count} "
-            f"est_pose=(x={pose_msg.x:.3f}, y={pose_msg.y:.3f}, theta={pose_msg.theta:.3f})"
-        )
+        if self._correction_step_count % 500 == 0:
+            self.get_logger().info(
+                f"correction={self._correction_step_count} "
+                f"est_pose=(x={pose_msg.x:.3f}, y={pose_msg.y:.3f}, theta={pose_msg.theta:.3f})"
+            )
 
     def _cmd_vel_cb(self, msg: Twist) -> None:
         """Store the latest velocity command for prediction updates."""

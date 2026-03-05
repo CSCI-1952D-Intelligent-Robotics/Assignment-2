@@ -153,6 +153,9 @@ Follow the implementation descriptions in the method docstrings for:
 
 You will need to implement these seven methods to complete the RRT planner. All of these methods with the exception of `_generate_rrt` can be reasonably implemented in about 5-20 LOC.
 
+> **Hint:** For `_new_state_trajectory`, you may find the `simulate_velocity_command` function
+> (importable from `a2_common.motion_models`) useful for propagating robot motion along a trajectory.
+
 ### How to Run
 
 **Terminal 1** - Launch the MuJoCo simulator, TurtleBot bridge, and your planner node:
